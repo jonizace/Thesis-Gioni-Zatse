@@ -1,6 +1,6 @@
 # Natural Language to SQL for Moodle Logs
 
-A tool that lets a user ask a question about Moodle activity logs in plain language. It writes the SQL query, runs it on a PostgreSQL database, and returns a short answer. It runs fully on a local computer, using small open-source language models.
+A self-correcting AI agent that lets a user ask a question about Moodle activity logs in plain language. It writes the SQL query, runs it on a PostgreSQL database, fixes its own errors, and returns a short answer. It runs fully on a local computer, using small open-source language models.
 
 This is the code for my diploma thesis at the National Technical University of Athens (NTUA).
 
@@ -15,12 +15,12 @@ This is the code for my diploma thesis at the National Technical University of A
 
 | File | Content |
 |---|---|
-| `code.py` | The tool: question → SQL → run → answer, with error correction. |
-| `data_cleaning.txt` | The code used to clean the raw Moodle logs (Dask and Pandas). |
+| `text_to_sql.py` | The agent: question → SQL → run → answer, with error correction. |
+| `data_cleaning.py` | The code used to clean the raw Moodle logs (Dask and Pandas). |
 | `Thesis_Gioni_Zatse.pdf` | The full thesis (Greek). |
 | `README.md` | This file. |
 
-## How the tool works
+## How the agent works
 
 **Question → SQL → Run → Answer**
 
@@ -28,10 +28,12 @@ This is the code for my diploma thesis at the National Technical University of A
 2. It builds a prompt. The prompt has the table structure, the allowed values of the `action` column, rules for the output (one SQL statement only, no extra text), and one example.
 3. It sends the prompt to a language model running in [LM Studio](https://lmstudio.ai/), through LM Studio's OpenAI-compatible API. No data leaves the computer.
 4. It takes the SQL from the model's answer and runs it in PostgreSQL.
-5. If the query fails, the code sends the database error message back to the model with a short hint, for example "column X does not exist". The model then writes a corrected query. The code tries up to 4 times.
+5. If the query fails, the agent sends the database error message back to the model with a short hint, for example "column X does not exist". The model then writes a corrected query. The agent tries up to 4 times.
 6. When the query works, the model writes a one-sentence answer from the result.
 
-Main tools: Python, PostgreSQL, SQLAlchemy, LangChain (prompt template and table structure), LM Studio.
+The order of the steps is fixed by the code. The model decides how to write the SQL and how to correct it after an error.
+
+Main technologies: Python, PostgreSQL, SQLAlchemy, LangChain (prompt template and table structure), LM Studio.
 
 The thesis also describes how to expose the table as a REST API with PostgREST. This is optional. The code in this repository connects to PostgreSQL directly.
 
