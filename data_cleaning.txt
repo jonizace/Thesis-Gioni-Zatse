@@ -1,0 +1,55 @@
+import dask
+import dask.dataframe as dd
+from dask.delayed import delayed
+from dask.distributed import Client
+import gc
+from pandas.api.types import infer_dtype
+file_path = "dataset/moodle_logs_ktu_1.csv"
+df_original = dd.read_csv(file_path)
+print(df_original.dtypes, "\n")
+print(df_original.info())
+df_original.head(10)
+total_rows = df_original.shape[0].compute()
+print(f"Total number of rows: {total_rows}")
+df_drop = df_original.map_partitions(lambda part: part.drop_duplicates())
+df_drop.head()
+total_afterdrop_rows = df_drop.shape[0].compute()
+print(f"Number of deleted duplicates: {total_rows - total_afterdrop_rows}")
+df_drop_test = df_original.drop_duplicates(subset=['action'])
+df_drop_test.head()
+total_afterdrop_rows_test = df_drop_test.shape[0].compute()
+print(f"Number of rows after drop_duplicates(): {total_afterdrop_rows_test}")
+missing_val = df_original.isnull().sum().compute()
+print(f"Total number of missing values per column:\n {missing_val} \n")
+for col in df_original.columns:
+perc = missing_val.loc[col] / total_rows
+if perc > 0:
+print(f"Percentage of missing info of column {col}: {perc:.2%}")
+df = df_drop.drop(columns=['ip', 'realuserid', 'objectid', 'other',
+'objecttable'])
+print(df.head())
+df.info()
+df = df[df["origin"].str.contains("cli") == False]
+83
+df.head()
+total_afterdropcli_rows = df.shape[0].compute()
+print(f"Number of deleted rows that contain cli: {total_afterdropcli_rows}\n")
+print(f"Number of total rows after deletion: {total_rows -
+total_afterdropcli_rows}")
+df["datetime"] = dd.to_datetime(df["timecreated"], unit="s")
+df.head()
+df["time"] = df["datetime"].dt.time
+df["day"] = df["datetime"].dt.day_name()
+df["month"] = df["datetime"].dt.month_name()
+df["userid"].unique().compute()
+grouped_userids = df.groupby("userid")
+grouped_userids.get_group(2).compute()
+grouped_userid_action = df.groupby(["userid", "action"]).size().compute()
+grouped_userid_action
+actions_gathered = df.groupby(["action"]).size()
+actions_gathered_comp = actions_gathered.compute()
+actions_gathered_comp
+actions_gathered_comp.idxmax()
+actions_gathered_comp.idxmin()
+grouped_userid_action.loc[grouped_userid_action.groupby("userid").idxmax()]
+grouped_userid_action.loc[grouped_userid_action.groupby("userid").idxmin()]
